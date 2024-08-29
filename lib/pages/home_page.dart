@@ -161,10 +161,12 @@ class HomePage extends StatelessWidget{
                       else if (ph < 7.4)
                       {
                         Acid_base_poisoning = 2;
+                        IsPHDown = 1;
                       }
                       else if (ph < 7.45)
                       {
                         Acid_base_poisoning = 4;
+                        IsPHDown = 0;
                       }
                       else
                       {
