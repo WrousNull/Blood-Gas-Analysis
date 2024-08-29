@@ -78,23 +78,24 @@ class HomePage extends StatelessWidget{
                 padding: const EdgeInsets.all(20),
                 child: ElevatedButton(
                   onPressed: () {
-                    double ph = double.tryParse(PH.text) ?? 0;
-                    double pCO2 = double.tryParse(P_CO2.text) ?? 0;
-                    double pO2 = double.tryParse(P_O2.text) ?? 0;
-                    double cHCO3 = double.tryParse(C_HCO3.text) ?? 0;
-                    double cNa = double.tryParse(C_Na.text) ?? 0;
-                    double cK = double.tryParse(C_K.text) ?? 0;
-                    double cCl = double.tryParse(C_Cl.text) ?? 0;
+                    double ph = double.tryParse(PH.text) ?? -1;
+                    double pCO2 = double.tryParse(P_CO2.text) ?? -1;
+                    double pO2 = double.tryParse(P_O2.text) ?? -1;
+                    double cHCO3 = double.tryParse(C_HCO3.text) ?? -1;
+                    double cNa = double.tryParse(C_Na.text) ?? -1;
+                    double cK = double.tryParse(C_K.text) ?? -1;
+                    double cCl = double.tryParse(C_Cl.text) ?? -1;
                     double alb = double.tryParse(ALB.text) ?? 41;
                     
                     double lac = double.tryParse(Lac.text) ?? 1.0;
-                    double time = double.tryParse(TIME.text) ?? 0;
+                    double time = double.tryParse(TIME.text) ?? -1;
                     //—————————————————————输出结果——————————————————————————
                     int IsAcute = 1;  //1：急性，0：慢性，-1：亚急性
                     int Acid_base_poisoning = 0;  //0：正常，1：酸中毒；2：可能的酸中毒；3：碱中毒；4：可能的碱中毒
                     int IsDaixie = -1; //-1:正常，1：代谢，2：呼吸
                     bool IsAgFine = true; //true：正常AG，false：高AG
                     String Addition = "";
+                    String IfMerge = "";
                     //——————————————————————————————————————————————————————
                     int CO2_relations = 0;        //0:正常；1：二氧化碳减低；2：高碳酸血症
                     int HCO3_relations = 0;       //0:正常，1：偏低，2：偏高
@@ -107,6 +108,7 @@ class HomePage extends StatelessWidget{
                     bool MergeAcidAndDaixie = false;  //如果合并了代酸，就需要看AG值是否为 高AG，如果为高AG就需要额外分析是否合并
                     bool Hypoproteinemia = false;
                     bool IsO2Fine = true;
+                    bool SomethingIsWrong = false;
 
                     double ag = cNa - cCl - cHCO3;
                     double derta_HCO3 = 24 - cHCO3;
@@ -115,6 +117,11 @@ class HomePage extends StatelessWidget{
                     double PredicChronicPH = 0.03*(pCO2-40)/10;
                     double pha;
                     double differ = 12;
+
+                    if (ph < 0 || pCO2 < 0 || pO2 < 0 || cHCO3 < 0 || cNa < 0 || cK < 0 || cCl < 0 || alb < 0 || lac < 0 || time < 0)
+                    {
+                      SomethingIsWrong = true;
+                    }
 
 
                     if (pO2 < 80)
@@ -239,11 +246,13 @@ class HomePage extends StatelessWidget{
                     if (IsCO2Down == 0 && IsHCO3Down == 1)   //异向变化
                     {
                       Addition += " 代谢性酸中毒 ";
+                      IfMerge = "合并";
                       MergeAcidAndDaixie = true;
                     }
                     else if (IsCO2Down == 1 && IsHCO3Down == 0)
                     {
                       Addition += " 代谢性碱中毒 ";
+                      IfMerge = "合并";
                     }
                     else if ((IsCO2Down == 1 && IsHCO3Down == 1) || (IsCO2Down == 0 && IsHCO3Down == 0))//代偿
                     {
@@ -254,10 +263,12 @@ class HomePage extends StatelessWidget{
                           if (pCO2 < (1.5*cHCO3)+6)
                           {
                             Addition += " 呼吸性碱中毒 ";
+                            IfMerge = "合并";
                           }
                           else if (pCO2 > (1.5*cHCO3)+10)
                           {
                             Addition += " 呼吸性酸中毒 ";
+                            IfMerge = "合并";
                           }
                         }
                         else if (IsDaixie == 0)
@@ -276,10 +287,13 @@ class HomePage extends StatelessWidget{
                             if (cHCO3 > 24+0.4*(pCO2-40)+3)
                             {
                               Addition += " 代谢性碱中毒 ";
+                              IfMerge = "合并";
                             }
                             else if (cHCO3 < 24+0.4*(pCO2-40)-3)
                             {
                               Addition += " 代谢性酸中毒 ";
+                              MergeAcidAndDaixie = true;
+                              IfMerge = "合并";
                             }
                           }
                           else if (pha < PredicAcutePH)
@@ -300,10 +314,13 @@ class HomePage extends StatelessWidget{
                             if (cHCO3 > 24+0.1*(pCO2-40)+3)   //target!
                             {
                               Addition += " 代谢性碱中毒 ";
+                              IfMerge = "合并";
                             }
                             else if(cHCO3 < 24+0.1*(pCO2-40)-3)
                             {
                               Addition += " 代谢性酸中毒 ";
+                              IfMerge = "合并";
+                              MergeAcidAndDaixie = true;
                             }
                           }
                         }
@@ -315,10 +332,12 @@ class HomePage extends StatelessWidget{
                           if(pCO2 > (0.7*cHCO3)+23)
                           {
                             Addition += " 呼吸性酸中毒 ";
+                            IfMerge = "合并";
                           }
                           else if (pCO2 < (0.7*cHCO3)+19)
                           {
                             Addition += " 呼吸性碱中毒 ";
+                            IfMerge = "合并";
                           }
                         }
                         else if(IsDaixie == 0)
@@ -329,11 +348,13 @@ class HomePage extends StatelessWidget{
                             if (cHCO3 < 24-0.2*(40-pCO2)-3)
                             {
                               Addition += " 代谢性酸中毒 ";
+                              IfMerge = "合并";
                               MergeAcidAndDaixie = true;
                             }
                             else if (cHCO3 > 24-0.2*(40-pCO2)+3)
                             {
                               Addition += " 代谢性碱中毒 ";
+                              IfMerge = "合并";
                             }
                           }
                           else
@@ -342,11 +363,13 @@ class HomePage extends StatelessWidget{
                             if (cHCO3 < 24-0.5*(40-pCO2)-3)
                             {
                               Addition += " 代谢性酸中毒 ";
+                              IfMerge = "合并";
                               MergeAcidAndDaixie = true;
                             }
                             else if (cHCO3 > 24-0.5*(40-pCO2)+3)
                             {
                               Addition += " 代谢性碱中毒 ";
+                              IfMerge = "合并";
                             }
                           }
                         }
@@ -372,10 +395,13 @@ class HomePage extends StatelessWidget{
                       if (derta_AG/derta_HCO3 < 1)
                       {
                         Addition += " 正常AG的代谢性酸中毒 "; //高AG代酸+正常AG代酸
+                        MergeAcidAndDaixie = true;
+                        IfMerge = "合并";
                       }
                       else if (derta_AG/derta_HCO3 > 2)
                       {
                         Addition += " 代谢性碱中毒 ";   //高AG代酸+代碱
+                        IfMerge = "合并";
                       }
                     }
 
@@ -408,11 +434,18 @@ class HomePage extends StatelessWidget{
 
                     if (EverythingIsOK)
                     {
-                      _IsAcute=_Acid_base_poisoning=_IsDaixie=_IsAgFine="";
+                      _IsAcute=_Acid_base_poisoning=_IsDaixie=_IsAgFine=_lac="";
                       Addition = "未发现明显异常";
+                      IfMerge = "";
+                    }
+                    if (SomethingIsWrong)
+                    {
+                      _IsAcute=_Acid_base_poisoning=_IsDaixie=_IsAgFine=_lac="";
+                      Addition = "数据填写有误！\n(请检查必填项是否填写完整,或是否填写了有效的值)";
+                      IfMerge = "";
                     }
 
-                    var answer = (_IsAcute,_Acid_base_poisoning,_IsDaixie,_IsAgFine,Addition,_lac);
+                    var answer = (_IsAcute,_Acid_base_poisoning,_IsDaixie,_IsAgFine,Addition,_lac,IfMerge);
 
                     Navigator.pushNamed(context,'/answer',arguments: answer);  //传递计算结果
                   },
@@ -423,8 +456,6 @@ class HomePage extends StatelessWidget{
           ),
         ),
       )
-
-      
     );
   }
 }
